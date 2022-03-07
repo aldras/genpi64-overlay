@@ -1,0 +1,44 @@
+#Extracted from https://bugs.gentoo.org/attachment.cgi?id=732343 (in https://bugs.gentoo.org/741490) to apply as a user patch for media-libs/libsdl2-2.0.16-r1, along with media-libs/libsdl2/files/libsdl2-2.0.16-static-libs.patch.
+
+#Make sure that "video_cards_vc4" USE flag is set (VIDEO_CARDS="vc4") and that media-libs/raspberrypi-userland is already merged.
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -1680,7 +1680,7 @@
+                 RPI_LIBS="-Wl,-R/usr/pkg/lib -L/usr/pkg/lib -lbcm_host"
+             else
+                 RPI_CFLAGS="-I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux"
+-                RPI_LIBS="-Wl,-rpath,/opt/vc/lib -L/opt/vc/lib -lbcm_host"
++                RPI_LIBS="-Wl,-rpath,/opt/vc/lib -L/opt/vc/lib -lbcm_host -lvchostif"
+             fi
+	 fi
+
+--- a/src/video/SDL_egl.c
++++ b/src/video/SDL_egl.c
+@@ -45,6 +45,10 @@
+ 
+ #if SDL_VIDEO_DRIVER_RPI
+ /* Raspbian places the OpenGL ES/EGL binaries in a non standard path */
++#include "raspberry/SDL_rpievents_c.h"
++#include "raspberry/SDL_rpiopengles.h"
++#include "raspberry/SDL_rpimouse.h"
++#include "raspberry/SDL_rpivideo.h"
+ #define DEFAULT_EGL ( vc4 ? "libEGL.so.1" : "libbrcmEGL.so" )
+ #define DEFAULT_OGL_ES2 ( vc4 ? "libGLESv2.so.2" : "libbrcmGLESv2.so" )
+ #define ALT_EGL "libEGL.so"
+
+--- a/src/video/raspberry/SDL_rpivideo.h
++++ b/src/video/raspberry/SDL_rpivideo.h
+@@ -41,6 +41,12 @@
+     DISPMANX_DISPLAY_HANDLE_T dispman_display;
+ } SDL_DisplayData;
+ 
++
++typedef struct {
++    DISPMANX_ELEMENT_HANDLE_T element;
++    int width;
++    int height;
++ } EGL_DISPMANX_WINDOW_T;
+ 
+ typedef struct SDL_WindowData
+ {
